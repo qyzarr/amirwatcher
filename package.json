@@ -1,0 +1,13 @@
+{
+  "name": "vidsearch-player",
+  "version": "1.0.0",
+  "description": "VidSearch Player with reverse proxy to mask vidsrc",
+  "main": "server.js",
+  "scripts": {
+    "start": "node server.js"
+  },
+  "dependencies": {
+    "express": "^4.18.2",
+    "node-fetch": "^3.4.1"
+  }
+}
