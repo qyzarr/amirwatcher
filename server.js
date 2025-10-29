@@ -1,26 +1,27 @@
 const express = require('express')
 const fetch = require('node-fetch')
-const path = require('path')
 const app = express()
+const PORT = 3000
 
-// reverse proxy for vidsrc
+// serve your frontend html
+app.use(express.static('public')) // put your html in public/
+
+// reverse proxy endpoint
 app.get('/embed/:type/:imdb', async (req, res) => {
   const { type, imdb } = req.params
-  const url = `https://vidsrc-embed.ru/embed/${type}/${imdb}`
+  // vidsrc embed URL
+  const url = `https://vidsrc.tv/embed/${type}/${imdb}`
 
   try {
-    const response = await fetch(url, {
-      headers: { 'User-Agent': req.get('User-Agent') }
-    })
-    const html = await response.text()
-    res.send(html)
-  } catch (err) {
+    const response = await fetch(url)
+    const text = await response.text()
+    // optional: rewrite links/scripts if needed
+    res.setHeader('Content-Type', 'text/html')
+    res.send(text)
+  } catch(err) {
     console.error(err)
-    res.status(500).send('Proxy error')
+    res.status(500).send('error fetching vidsrc')
   }
 })
 
-// serve static files
-app.use(express.static(path.join(__dirname, 'public')))
-
-app.listen(3000, () => console.log('Server running at http://localhost:3000'))
+app.listen(PORT, () => console.log(`server running on http://localhost:${PORT}`))
