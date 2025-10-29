@@ -1,0 +1,125 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Amir Watcher</title>
+<style>
+  body { font-family: Arial, sans-serif; background:#111; color:#fff; margin:0; padding:0; display:flex; flex-direction:column; align-items:center; }
+  header { padding:20px; font-size:24px; font-weight:bold; }
+  input { padding:8px; width:300px; border-radius:5px; border:none; margin-right:8px; }
+  button { padding:8px 12px; border:none; border-radius:5px; background:#6ee7b7; color:#000; cursor:pointer; margin-top:10px; }
+  button:hover { background:#4fd9a5; }
+  .results { margin-top:20px; display:flex; flex-wrap:wrap; gap:12px; justify-content:center; max-width:1200px; }
+  .card { background:#222; padding:8px; border-radius:6px; cursor:pointer; width:150px; text-align:center; }
+  .card img { width:100%; border-radius:4px; height:225px; object-fit:cover; }
+  .card:hover { background:#333; }
+  iframe { margin-top:20px; width:90%; max-width:800px; height:450px; border:none; border-radius:8px; }
+</style>
+</head>
+<body>
+
+<header>Amir Watcher</header>
+
+<div>
+  <input type="text" id="searchInput" placeholder="Search for movies or shows">
+  <button onclick="searchMovie()">Search</button>
+  <button onclick="goFullScreen()">Fullscreen</button>
+</div>
+
+<div class="results" id="results"></div>
+
+<iframe id="player" src="" allowfullscreen></iframe>
+
+<script>
+const TMDB_API_KEY = "ee413eef7ee67ad36ed938bc6b5acd67";
+const resultsDiv = document.getElementById('results');
+const playerIframe = document.getElementById('player');
+
+async function fetchPopular() {
+  try {
+    const movieRes = await fetch(`https://api.themoviedb.org/3/movie/popular?api_key=${TMDB_API_KEY}&language=en-US&page=1`);
+    const movieData = await movieRes.json();
+    const tvRes = await fetch(`https://api.themoviedb.org/3/tv/popular?api_key=${TMDB_API_KEY}&language=en-US&page=1`);
+    const tvData = await tvRes.json();
+    const combined = [...movieData.results, ...tvData.results];
+    showResults(combined);
+  } catch(err) {
+    console.error(err);
+    resultsDiv.innerHTML = "<p>Error loading popular movies/shows</p>";
+  }
+}
+
+function showResults(items) {
+  resultsDiv.innerHTML = "";
+  items.forEach(item => {
+    if(!item.poster_path) return;
+    const title = item.title || item.name;
+    const year = (item.release_date || item.first_air_date || "").slice(0,4);
+    const type = item.title ? "movie" : "tv";
+
+    const card = document.createElement('div');
+    card.className = 'card';
+    card.innerHTML = `
+      <img src="https://image.tmdb.org/t/p/w500${item.poster_path}" alt="${title}">
+      <h4>${title}</h4>
+      <p>${year}</p>
+    `;
+    card.addEventListener('click', async () => {
+      try {
+        const extRes = await fetch(`https://api.themoviedb.org/3/${type}/${item.id}/external_ids?api_key=${TMDB_API_KEY}`);
+        const extData = await extRes.json();
+        if(extData.imdb_id){
+          if(type === "movie"){
+            playerIframe.src = `https://vidsrc-embed.ru/embed/movie/${extData.imdb_id}`;
+          } else if(type === "tv"){
+            playerIframe.src = `https://vidsrc-embed.ru/embed/tv?imdb=${extData.imdb_id}`;
+          }
+        } else {
+          alert("IMDb ID not found");
+        }
+      } catch(e) {
+        console.error(e);
+        alert("Error fetching IMDb ID");
+      }
+    });
+    resultsDiv.appendChild(card);
+  });
+}
+
+async function searchMovie() {
+  const query = document.getElementById('searchInput').value.trim();
+  if(!query) return;
+  try {
+    const url = `https://api.themoviedb.org/3/search/multi?api_key=${TMDB_API_KEY}&query=${encodeURIComponent(query)}`;
+    const response = await fetch(url);
+    const data = await response.json();
+    if(!data.results || data.results.length === 0){
+      resultsDiv.innerHTML = "<p>No results found</p>";
+      return;
+    }
+    showResults(data.results);
+  } catch(err) {
+    console.error(err);
+    resultsDiv.innerHTML = "<p>Error fetching search results</p>";
+  }
+}
+
+function goFullScreen() {
+  if (playerIframe.requestFullscreen) {
+    playerIframe.requestFullscreen();
+  } else if (playerIframe.mozRequestFullScreen) {
+    playerIframe.mozRequestFullScreen();
+  } else if (playerIframe.webkitRequestFullscreen) {
+    playerIframe.webkitRequestFullscreen();
+  } else if (playerIframe.msRequestFullscreen) {
+    playerIframe.msRequestFullscreen();
+  }
+}
+
+// load popular movies/shows on page load
+fetchPopular();
+</script>
+
+</body>
+</html>
