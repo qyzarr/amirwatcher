@@ -68,7 +68,7 @@ function showResults(items) {
         const extRes = await fetch(`https://api.themoviedb.org/3/${type}/${item.id}/external_ids?api_key=${TMDB_API_KEY}`);
         const extData = await extRes.json();
         if(extData.imdb_id){
-          // use reverse proxy
+          // use self-hosted reverse proxy
           playerIframe.src = `/embed/${type}/${extData.imdb_id}`;
         } else {
           alert("IMDb ID not found");
