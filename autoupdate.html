@@ -1,0 +1,53 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<title>VidSearch Auto-Updater</title>
+<style>
+body{display:flex;align-items:center;justify-content:center;height:100vh;background:#111;color:#fff;font-family:system-ui,-apple-system,Segoe UI,Roboto,Arial}
+.card{padding:12px;background:#222;border-radius:8px;box-shadow:0 4px 20px rgba(0,0,0,.5);text-align:center}
+button{padding:8px 12px;margin-top:12px;border:none;border-radius:6px;background:#6ee7b7;color:#000;cursor:pointer}
+button:hover{background:#4fd9a5}
+</style>
+</head>
+<body>
+<div class="card">
+  <div id="status">Fetching latest version...</div>
+  <button id="openApp">Open App</button>
+</div>
+
+<script>
+const repoRawUrl = "https://raw.githubusercontent.com/qyzarr/amirwatcher/refs/heads/main/amirwatcher.html?t=" + Date.now();
+const status = document.getElementById("status");
+const openBtn = document.getElementById("openApp");
+
+let latestBlobUrl = null;
+
+async function fetchLatest() {
+  try {
+    status.textContent = "Fetching latest HTML...";
+    const res = await fetch(repoRawUrl, {cache:'no-store'});
+    if(!res.ok) throw new Error(res.status);
+    let text = await res.text();
+
+    // optional: replace /embed/... with your remote proxy if you have one
+    // text = text.replace(/src="\/embed\//g, 'src="https://YOUR_PROXY_URL/embed/');
+
+    const blob = new Blob([text], {type:"text/html"});
+    latestBlobUrl = URL.createObjectURL(blob);
+    status.textContent = "Latest version ready";
+  } catch(e) {
+    console.error(e);
+    status.textContent = "Error fetching latest version";
+  }
+}
+
+openBtn.onclick = (e) => {
+  e.preventDefault();
+  if(latestBlobUrl) window.open(latestBlobUrl, "_blank");
+}
+
+fetchLatest();
+</script>
+</body>
+</html>
